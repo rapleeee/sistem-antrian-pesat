@@ -1,15 +1,42 @@
-<div class="min-h-screen bg-gray-950 text-white p-4"
+<div class="h-screen bg-gray-950 text-white p-4 flex flex-col justify-between overflow-hidden"
      wire:poll.3000ms
      x-data="ttsManager()"
      x-init="initEcho()"
      @queue-updated.window="onQueueUpdated($event.detail)">
 
-    <div class="mb-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold tracking-tight">Board Antrian Sertifikasi</h1>
-        <span class="text-sm text-gray-400" id="clock"></span>
-    </div>
+    <style>
+        @keyframes marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+        .animate-marquee {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 40s linear infinite;
+        }
+        /* Custom scrollbar for panels grid */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #374151;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #4b5563;
+        }
+    </style>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="flex-1 min-h-0 flex flex-col">
+        <div class="mb-4 flex items-center justify-between shrink-0">
+            <h1 class="text-2xl font-bold tracking-tight">Board Antrian Sertifikasi</h1>
+            <span class="text-sm text-gray-400" id="clock"></span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto flex-1 min-h-0 pr-1 custom-scrollbar">
         @foreach ($panelsData as $data)
         @php
             $p    = $data['panel'];
@@ -113,6 +140,19 @@
             @endif
         </a>
         @endforeach
+    </div>
+    </div>
+
+    {{-- Running Text --}}
+    <div class="bg-gray-900/60 backdrop-blur-md border border-gray-800 rounded-xl px-4 py-3 mt-4 shrink-0 overflow-hidden flex items-center gap-3">
+        <div class="bg-blue-600 text-white font-extrabold text-xs uppercase px-2.5 py-1 rounded shrink-0 tracking-wider">
+            Pengumuman
+        </div>
+        <div class="relative w-full overflow-hidden whitespace-nowrap">
+            <div class="animate-marquee text-sm text-gray-300 font-medium tracking-wide">
+                Persiapkan diri kalian, kasih hasil terbaikmu. Silahkan jika sudah masuk ke dalam antrian, datang ke depan ruang untuk menunggu giliran. &nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp; Persiapkan diri kalian, kasih hasil terbaikmu. Silahkan jika sudah masuk ke dalam antrian, datang ke depan ruang untuk menunggu giliran. &nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp;
+            </div>
+        </div>
     </div>
 
     <script>
