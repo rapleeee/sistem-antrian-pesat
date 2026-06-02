@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::get('/panels', AdminPanels::class)->name('panels');
         Route::get('/panels/{panel}/participants', AdminParticipants::class)->name('participants');
         Route::get('/reports', AdminReports::class)->name('reports');
+        Route::get('/backup-restore', \App\Livewire\Admin\BackupRestore::class)->name('backup');
     });
 
 // ── Operator (publik, auth via PIN session) ──────────────────────────

@@ -22,6 +22,9 @@
                         <flux:sidebar.item icon="chart-bar" :href="route('admin.reports')" :current="request()->routeIs('admin.reports')" wire:navigate>
                             Laporan
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="server-stack" :href="route('admin.backup')" :current="request()->routeIs('admin.backup')" wire:navigate>
+                            Backup & Restore
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
                 <flux:sidebar.group :heading="__('Publik')" class="grid">
