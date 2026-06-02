@@ -24,7 +24,7 @@
     </div>
     @else
     {{-- Operator Dashboard --}}
-    <div class="p-5 flex-1 flex flex-col gap-4 max-w-3xl mx-auto w-full">
+    <div class="p-5 flex-1 flex flex-col gap-4 max-w-7xl mx-auto w-full">
         {{-- Header --}}
         <div class="flex items-center justify-between">
             <div>
@@ -32,7 +32,7 @@
                 <p class="text-sm text-gray-500">
                     Selesai: {{ $stats['done'] }}/{{ $stats['total'] }} •
                     Menunggu: {{ $stats['waiting'] }} •
-                    Terlewati hari ini: {{ $stats['skipped'] }}
+                    Terlewati: {{ $stats['skipped'] }}
                 </p>
             </div>
             <span @class([
@@ -50,8 +50,10 @@
             </span>
         </div>
 
+        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_560px] gap-4 items-start">
+            <div class="space-y-4 min-w-0">
         {{-- Slot Saat Ini --}}
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 xl:sticky xl:top-5 z-10">
             <h2 class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Giliran Saat Ini</h2>
 
             @if ($currentSlot['presenter'])
@@ -182,36 +184,59 @@
         </div>
         @endif
 
-        @if ($skippedToday->isNotEmpty())
-        <div class="bg-white rounded-2xl border border-rose-100 shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-medium text-rose-500 uppercase tracking-wide">Terlewati Hari Ini</h2>
-                <span class="text-xs text-slate-400">Bisa dipanggil ulang selama tidak ada giliran aktif</span>
             </div>
-            <div class="space-y-2">
-                @foreach ($skippedToday as $p)
-                @php $observers = $panel->observersFor($p); @endphp
-                <div class="flex items-center gap-3 rounded-xl border border-rose-100 bg-rose-50/50 px-3 py-2">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-semibold text-slate-800 truncate">{{ $p->name }}</div>
-                        <div class="text-xs text-slate-500 truncate">
-                            Observer: {{ $observers->pluck('name')->filter()->join(' dan ') ?: '—' }}
-                        </div>
+
+            <aside class="bg-white rounded-2xl border border-rose-100 shadow-sm p-5 xl:sticky xl:top-5">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                        <h2 class="text-sm font-medium text-rose-500 uppercase tracking-wide">Terlewati</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Panggil ulang saat tidak ada giliran aktif.</p>
                     </div>
-                    <button wire:click="recallSkipped({{ $p->id }})"
-                            @disabled((bool) $currentSlot['presenter'])
-                            @class([
-                                'px-3 py-1.5 rounded-lg text-xs font-semibold transition',
-                                'bg-rose-600 hover:bg-rose-700 text-white' => ! $currentSlot['presenter'],
-                                'bg-slate-100 text-slate-400 cursor-not-allowed' => (bool) $currentSlot['presenter'],
-                            ])>
-                        Panggil Ulang
-                    </button>
+                    <span class="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded-lg">{{ $skippedToday->count() }}</span>
                 </div>
-                @endforeach
-            </div>
+
+                <div class="overflow-hidden rounded-xl border border-rose-100">
+                    <table class="w-full text-sm">
+                        <thead class="bg-rose-50 text-rose-700">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium w-10">#</th>
+                                <th class="px-3 py-2 text-left font-medium">Kelompok</th>
+                                <th class="px-3 py-2 text-left font-medium w-40">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-rose-100">
+                            @forelse ($skippedToday as $p)
+                            @php $observers = $panel->observersFor($p); @endphp
+                            <tr class="bg-white">
+                                <td class="px-3 py-2 text-xs text-slate-400">{{ $loop->iteration }}</td>
+                                <td class="px-3 py-2 min-w-0">
+                                    <div class="font-semibold text-slate-800 truncate">{{ $p->name }}</div>
+                                    <div class="text-xs text-slate-500 truncate">
+                                        {{ $observers->pluck('name')->filter()->join(' dan ') ?: '—' }}
+                                    </div>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <button wire:click="recallSkipped({{ $p->id }})"
+                                            @disabled((bool) $currentSlot['presenter'])
+                                            @class([
+                                                'w-full px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition',
+                                                'bg-rose-600 hover:bg-rose-700 text-white' => ! $currentSlot['presenter'],
+                                                'bg-slate-100 text-slate-400 cursor-not-allowed' => (bool) $currentSlot['presenter'],
+                                            ])>
+                                        Panggil Ulang
+                                    </button>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="px-3 py-8 text-center text-sm text-slate-400">Belum ada yang terlewati.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </aside>
         </div>
-        @endif
     </div>
     @endif
 </div>

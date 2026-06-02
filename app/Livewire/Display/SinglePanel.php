@@ -51,7 +51,6 @@ class SinglePanel extends Component
             ->where('role', 'presenter')
             ->whereIn('status', ['waiting', 'skipped'])
             ->orderBy('queue_order')
-            ->take(8)
             ->get();
 
         $done = $this->panel->donePresenterCount();

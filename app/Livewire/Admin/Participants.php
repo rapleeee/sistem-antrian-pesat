@@ -202,7 +202,7 @@ class Participants extends Component
             'done_at' => null,
         ]);
 
-        $this->panel->normalizePresenterGroupOrder();
+        $this->panel->resetPresenterGroupOrder();
         $this->dispatch('swal-toast', title: 'Antrian berhasil direset.', icon: 'success');
     }
 

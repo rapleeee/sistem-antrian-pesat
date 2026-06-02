@@ -90,3 +90,25 @@ test('skipping and recalling works on the whole presenter observer group', funct
         ->and($andiObserver1->fresh()->status)->toBe('observing')
         ->and($andiObserver2->fresh()->status)->toBe('observing');
 });
+
+test('resetting queue order restores the original imported group order', function () {
+    $panel = Panel::create([
+        'name' => 'Panel RPL Kelas 10',
+        'grade' => '10',
+        'major' => 'RPL',
+    ]);
+
+    [$andi] = createQueueGroup($panel, 'Andi', 1, 1);
+    [$budi] = createQueueGroup($panel, 'Budi', 2, 4);
+    [$citra] = createQueueGroup($panel, 'Citra', 3, 7);
+
+    $panel->reorderPresenterGroups([$citra->id, $andi->id, $budi->id]);
+
+    expect($panel->participants()->where('role', 'presenter')->orderBy('queue_order')->pluck('name')->all())
+        ->toBe(['Citra', 'Andi', 'Budi']);
+
+    $panel->resetPresenterGroupOrder();
+
+    expect($panel->participants()->where('role', 'presenter')->orderBy('queue_order')->pluck('name')->all())
+        ->toBe(['Andi', 'Budi', 'Citra']);
+});

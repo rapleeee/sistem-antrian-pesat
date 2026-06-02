@@ -323,6 +323,22 @@ class Panel extends Model
             });
     }
 
+    public function resetPresenterGroupOrder(): void
+    {
+        $order = 1;
+
+        $this->participants()
+            ->where('role', 'presenter')
+            ->orderByRaw('group_order is null')
+            ->orderBy('group_order')
+            ->orderBy('id')
+            ->get()
+            ->each(function (Participant $presenter) use (&$order) {
+                $this->movePresenterGroup($presenter, $order);
+                $order += max(1, $this->groupMembers($presenter)->count());
+            });
+    }
+
     private function groupMembers(Participant $presenter): Collection
     {
         if ($presenter->group_order === null) {

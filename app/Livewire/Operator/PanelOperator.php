@@ -143,10 +143,6 @@ class PanelOperator extends Component
         $skippedToday = $this->panel->participants()
             ->where('role', 'presenter')
             ->where('status', 'skipped')
-            ->where(function ($query) {
-                $query->whereDate('exam_date', now()->toDateString())
-                    ->orWhereNull('exam_date');
-            })
             ->orderBy('queue_order')
             ->get();
 
