@@ -1,0 +1,38 @@
+name: Deploy Laravel ke Proxmox via Tailscale
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. KONEKSIKAN GITHUB ACTIONS KE VPN TAILSCALE KAMU
+    - name: Connect to Tailscale Network
+      uses: tailscale/github-action@v2
+      with:
+        authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+        userspace-networking: false
+
+    # 2. MASUK KE PROXMOX SEPERTI BIASA (SEKARANG SUDAH SATU JARINGAN)
+    - name: Masuk ke Proxmox via SSH & Deploy
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }} # Ini otomatis membaca IP Tailscale 100.xx
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 22 # Tetap port 22 standar karena Tailscale bypass firewall sekolah
+        script: |
+          cd /var/www/sistem-intrian
+          git pull origin master
+          php8.4 /usr/local/bin/composer install --no-dev --optimize-autoloader
+          php8.4 artisan migrate --force
+          php8.4 artisan config:cache
+          php8.4 artisan route:cache
+          php8.4 artisan view:cache
+          php8.4 artisan optimize:clear
+          sudo systemctl restart php8.4-fpm
+          sudo systemctl restart nginx
+          echo "Deployment Selesai!"
