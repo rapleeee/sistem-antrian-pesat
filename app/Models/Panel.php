@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class Panel extends Model
 {
@@ -123,52 +124,54 @@ class Panel extends Model
      */
     public function advanceQueue(): ?QueueLog
     {
-        // Cari presenter berikutnya
-        $presenter = $this->participants()
-            ->whereIn('status', ['waiting', 'skipped'])
-            ->where('role', 'presenter')
-            ->orderBy('queue_order')
-            ->lockForUpdate()
-            ->first();
-
-        if (! $presenter) {
-            return null;
-        }
-
-        // Cari observer dari group yang sama (jika ada group_order)
-        if ($presenter->group_order !== null) {
-            $observers = $this->participants()
-                ->where('group_order', $presenter->group_order)
-                ->where('role', 'observer')
-                ->orderBy('queue_order')
-                ->get();
-            $obs1 = $observers->get(0);
-            $obs2 = $observers->get(1);
-        } else {
-            // Mode legacy: ambil 2 peserta berikutnya di queue
-            $next = $this->participants()
+        return DB::transaction(function () {
+            // Cari presenter berikutnya
+            $presenter = $this->participants()
                 ->whereIn('status', ['waiting', 'skipped'])
-                ->where('id', '!=', $presenter->id)
+                ->where('role', 'presenter')
                 ->orderBy('queue_order')
-                ->take(2)
                 ->lockForUpdate()
-                ->get();
-            $obs1 = $next->get(0);
-            $obs2 = $next->get(1);
-        }
+                ->first();
 
-        $presenter->update(['status' => 'presenting', 'presented_at' => now()]);
-        $obs1?->update(['status' => 'observing']);
-        $obs2?->update(['status' => 'observing']);
+            if (! $presenter) {
+                return null;
+            }
 
-        return QueueLog::create([
-            'panel_id' => $this->id,
-            'presenter_id' => $presenter->id,
-            'observer1_id' => $obs1?->id,
-            'observer2_id' => $obs2?->id,
-            'action' => 'started',
-            'started_at' => now(),
-        ]);
+            // Cari observer dari group yang sama (jika ada group_order)
+            if ($presenter->group_order !== null) {
+                $observers = $this->participants()
+                    ->where('group_order', $presenter->group_order)
+                    ->where('role', 'observer')
+                    ->orderBy('queue_order')
+                    ->get();
+                $obs1 = $observers->get(0);
+                $obs2 = $observers->get(1);
+            } else {
+                // Mode legacy: ambil 2 peserta berikutnya di queue
+                $next = $this->participants()
+                    ->whereIn('status', ['waiting', 'skipped'])
+                    ->where('id', '!=', $presenter->id)
+                    ->orderBy('queue_order')
+                    ->take(2)
+                    ->lockForUpdate()
+                    ->get();
+                $obs1 = $next->get(0);
+                $obs2 = $next->get(1);
+            }
+
+            $presenter->update(['status' => 'presenting', 'presented_at' => now()]);
+            $obs1?->update(['status' => 'observing']);
+            $obs2?->update(['status' => 'observing']);
+
+            return QueueLog::create([
+                'panel_id'     => $this->id,
+                'presenter_id' => $presenter->id,
+                'observer1_id' => $obs1?->id,
+                'observer2_id' => $obs2?->id,
+                'action'       => 'started',
+                'started_at'   => now(),
+            ]);
+        });
     }
 
     /**
@@ -213,23 +216,25 @@ class Panel extends Model
 
     public function recallSkippedPresenter(int $presenterId): ?QueueLog
     {
-        if ($this->currentSlot()['presenter']) {
-            return null;
-        }
+        return DB::transaction(function () use ($presenterId) {
+            if ($this->currentSlot()['presenter']) {
+                return null;
+            }
 
-        $presenter = $this->participants()
-            ->where('role', 'presenter')
-            ->where('status', 'skipped')
-            ->find($presenterId);
+            $presenter = $this->participants()
+                ->where('role', 'presenter')
+                ->where('status', 'skipped')
+                ->find($presenterId);
 
-        if (! $presenter) {
-            return null;
-        }
+            if (! $presenter) {
+                return null;
+            }
 
-        $minOrder = ($this->participants()->min('queue_order') ?? 1) - 3;
-        $this->movePresenterGroup($presenter, $minOrder);
+            $minOrder = ($this->participants()->min('queue_order') ?? 1) - 3;
+            $this->movePresenterGroup($presenter, $minOrder);
 
-        return $this->advanceQueue();
+            return $this->advanceQueue();
+        });
     }
 
     /**

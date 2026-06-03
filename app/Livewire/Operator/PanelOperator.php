@@ -60,7 +60,12 @@ class PanelOperator extends Component
         $log = $this->panel->advanceQueue();
 
         if ($log) {
-            broadcast(new QueueUpdated($this->panel->fresh(), $this->currentTtsMessage()));
+            try {
+                broadcast(new QueueUpdated($this->panel->fresh(), $this->currentTtsMessage()));
+            } catch (\Throwable $e) {
+                // Broadcasting gagal (misal Reverb tidak aktif) — abaikan, DB sudah terupdate
+                \Illuminate\Support\Facades\Log::warning('QueueUpdated broadcast failed: ' . $e->getMessage());
+            }
         }
     }
 
@@ -73,7 +78,11 @@ class PanelOperator extends Component
         $log = $this->panel->completePresenter();
 
         if ($log) {
-            broadcast(new QueueUpdated($this->panel->fresh()));
+            try {
+                broadcast(new QueueUpdated($this->panel->fresh()));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('QueueUpdated broadcast failed: ' . $e->getMessage());
+            }
         }
     }
 
@@ -86,7 +95,11 @@ class PanelOperator extends Component
         $log = $this->panel->skipPresenter();
 
         if ($log) {
-            broadcast(new QueueUpdated($this->panel->fresh()));
+            try {
+                broadcast(new QueueUpdated($this->panel->fresh()));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('QueueUpdated broadcast failed: ' . $e->getMessage());
+            }
         }
     }
 
@@ -99,7 +112,11 @@ class PanelOperator extends Component
         $log = $this->panel->recallSkippedPresenter($presenterId);
 
         if ($log) {
-            broadcast(new QueueUpdated($this->panel->fresh(), $this->currentTtsMessage()));
+            try {
+                broadcast(new QueueUpdated($this->panel->fresh(), $this->currentTtsMessage()));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('QueueUpdated broadcast failed: ' . $e->getMessage());
+            }
         }
     }
 
