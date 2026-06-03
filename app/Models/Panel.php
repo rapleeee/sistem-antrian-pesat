@@ -230,7 +230,7 @@ class Panel extends Model
                 return null;
             }
 
-            $minOrder = ($this->participants()->min('queue_order') ?? 1) - 3;
+            $minOrder = max(0, ($this->participants()->min('queue_order') ?? 4) - 3);
             $this->movePresenterGroup($presenter, $minOrder);
 
             return $this->advanceQueue();
